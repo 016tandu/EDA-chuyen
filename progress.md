@@ -3,5 +3,4 @@
 
 | Ngày (Date) | Nhánh (Branch) | Mã băm Commit (Commit Hash) | Tóm tắt công việc (Summary / Brief) |
 | :--- | :--- | :--- | :--- |
-| 2026-10-11 | master | `init` | docs: hoàn thiện tài liệu giải thích chuyên sâu 2 ứng viên đề tài Khóa luận HTTT |
-| 2026-10-11 | master | `pending` | feat: thiết lập pipeline tự động tải bộ dữ liệu IEEE-CIS Fraud Detection từ Hugging Face mirror |
+| 2026-10-11 | master | `281e6415fa1b10182a02809127883ba53be57fa5` | feat: thiết lập tài liệu ứng viên đề tài và pipeline tự động tải dữ liệu IEEE-CIS |
