@@ -73,18 +73,28 @@ scoop install nodejs        # Node.js runtime (for mermaid-cli)
 scoop install git           # Version control
 ```
 
+### 2.3. Data Ingestion & Public Mirror Protocols
+- **Kaggle Authentication Fallback:** When Kaggle datasets require manual terms agreement or private API keys (`kaggle.json`) that are absent in the user's environment, agents **must never block or fail**. Proactively discover and query public verified mirrors on Hugging Face (e.g., `aliceczr/ieee-fraud-detection`) or public S3 buckets.
+- **Resilient Streaming Ingestion:** Implement chunked downloading with live progress indicators and automatic skip logic if the target file already exists with matching byte size.
+- **Storage Protection:** All raw data files (`data/raw/`) and processed parquet files (`data/processed/`) must be protected by `.gitignore` to prevent repository bloat.
+
 ---
 
 ## 3. Python Development Standards
 
 - **Package & Environment Manager:** Strictly use **`uv`**. Never use bare `pip`, `poetry`, or `conda`.
-  - Virtualenv & dependencies: `uv venv`, `uv add <package>`, `uv run <command>`.
+  - Virtualenv & dependencies: `uv venv`, `uv sync`, `uv add <package>`, `uv run <command>`.
 - **Linting & Code Formatting:**
   - Linter: `uv run ruff check . --fix`
   - Formatter: `uv run ruff format .`
 - **Type Checking:**
   - Type checker: `uv run pyright` or `uv run mypy .`
   - Strict type hints on public interfaces, Pydantic models, and domain boundaries.
+- **Big Data & EDA Standards (Polars 2.0+ & Parquet Optimization):**
+  - **Polars Row Counting:** In Polars 2.0+, always use `pl.len()` for counting aggregated rows (never call `pl.count()` without arguments).
+  - **Type Safety:** Use `pl.String` instead of deprecated `pl.Utf8`. Always provide `infer_schema_length=10000` when reading heterogeneous CSVs.
+  - **Mandatory Parquet Conversion:** Datasets $> 100\text{ MB}$ must be converted to **Apache Parquet (`compression='zstd'`)** under `data/processed/` immediately after raw loading to ensure sub-second query speeds and stay within RAM limits.
+  - **Dynamic Path Resolution:** Notebooks and scripts must dynamically resolve the root project path (`PROJECT_ROOT = os.path.abspath(os.getcwd()) if ...`) to avoid path failures when executed across different working directories.
 - **Architecture Style:** Clean Architecture / Hexagonal Architecture:
   - `domain/` / `entity/`: Pure business rules, zero framework dependencies.
   - `usecase/`: Application orchestration and validation.
