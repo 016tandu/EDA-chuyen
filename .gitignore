@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ruff_cache/
+.pytest_cache/
+
+# Data
+data/raw/
+data/processed/
+*.csv
+*.parquet
+*.zip
+*.tar.gz
+
+# Environment
+.env
+kaggle.json
+
+# IDE
+.vscode/
+.idea/
