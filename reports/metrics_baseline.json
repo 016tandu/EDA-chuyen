@@ -1,0 +1,15 @@
+{
+  "threshold": 0.5,
+  "roc_auc": 0.9108,
+  "pr_auc": 0.5454,
+  "brier_score": 0.022,
+  "confusion_matrix": {
+    "TN": 91101,
+    "FP": 253,
+    "FN": 2184,
+    "TP": 1098
+  },
+  "total_financial_loss_usd": 392641.78,
+  "total_transactions": 94636,
+  "fraud_count": 3282
+}

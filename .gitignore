@@ -19,6 +19,10 @@ data/processed/
 .env
 kaggle.json
 
+# Model artifacts
+*.joblib
+*.pkl
+
 # IDE
 .vscode/
 .idea/
