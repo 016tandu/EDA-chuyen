@@ -10,4 +10,6 @@
 | 2026-10-27 | master | `895f424849646b9a84a621764eb8655cb3b3beec` | test: xây dựng bộ công cụ kiểm chứng trực quan verify_baseline.py cho người dùng |
 | 2026-11-03 | master | `705d80af0ff263e30d7a88ce4fe33073a0dbaacf` | feat(conformal): triển khai động cơ Mondrian Conformal Prediction và tối ưu hóa chi phí 3-way triage |
 | 2026-11-03 | master | `d9cbce204f73db8a03ebdf534574fae94c43d29d` | feat(api): xây dựng API 4 tầng Fast-Fail, bộ kiểm thử tự động Stage 3 và đạt 100% Acceptance Criteria |
+| 2026-11-03 | master | `872433830055332f25d57c221bf1662fd9fa9698` | feat(dashboard): triển khai Dual-View Web Dashboard, Telemetry thời gian thực và xác thực 100% Acceptance Criteria Stage 4 |
+
 
