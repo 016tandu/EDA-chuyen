@@ -26,3 +26,7 @@ kaggle.json
 # IDE
 .vscode/
 .idea/
+
+# Local User Dirs
+ThucTap/
+

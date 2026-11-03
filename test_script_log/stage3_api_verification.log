@@ -1,0 +1,37 @@
+=====================================================================================
+🚀 BẮT ĐẦU QUY TRÌNH KIỂM CHỨNG & NGHIỆM THU TỰ ĐỘNG STAGE 3
+Thời gian: 2026-11-03 20:08:08
+=====================================================================================
+
+[TEST AC-1] Kiểm tra Clean Architecture & Healthcheck Endpoint...
+ -> Kết quả AC-1: ✅ PASS | Status: 200 | Latency: 5.45ms
+
+[TEST AC-2] Kiểm tra Layer 1: Schema Fast-Fail (Pydantic Validation)...
+ -> Kết quả AC-2: ✅ PASS | Status: 422 | Latency: 2.61ms
+    Chi tiết: Lỗi cú pháp tại [body.transaction_amt]: Input should be greater than 0
+
+[TEST AC-3] Kiểm tra Layer 2: Rule Engine Fast-Fail (Blacklist & Velocity)...
+ -> Kết quả AC-3: ✅ PASS | Blacklist Status: 403 | Velocity Blocked: True | Latency: 1.88ms
+
+[TEST AC-4] Kiểm tra Layer 3: Idempotency Cache (SHA-256 Fast Replay)...
+ -> Kết quả AC-4: ✅ PASS | Cache Hit: True | Layer: LAYER_3_CACHE | Latency: 2.15ms
+
+[TEST AC-5] Kiểm tra Layer 4: Conformal 3-Way Triage Decision Integration...
+ -> Kết quả AC-5: ✅ PASS | Safe: STEP_UP_2FA (p=0.0294) | Risky: STEP_UP_2FA (p=0.4799)
+
+[TEST AC-6] Kiểm tra Tải & Độ Trễ SLA (60 Requests Hỗn Hợp Đa Tầng)...
+ -> Kết quả AC-6: ✅ PASS | Mean: 2.98ms | p50: 1.30ms | p90: 1.57ms | p99: 27.57ms (Mục tiêu: <40ms)
+
+=====================================================================================
+📋 BẢNG TỔNG HỢP ĐÁNH GIÁ CHẤP THUẬN STAGE 3 (SELF-ASSESSMENT SUMMARY):
+=====================================================================================
+ • AC-1   [Clean Architecture & Endpoints                  ]: ✅ PASS
+ • AC-2   [Layer 1 Fast-Fail (Schema)                      ]: ✅ PASS
+ • AC-3   [Layer 2 Fast-Fail (Rules: Blacklist & Velocity) ]: ✅ PASS
+ • AC-4   [Layer 3 Idempotency Cache (SHA-256)             ]: ✅ PASS
+ • AC-5   [Layer 4 Conformal Triage Integration            ]: ✅ PASS
+ • AC-6   [Latency SLA (p99 < 40ms, mean < 25ms)           ]: ✅ PASS
+ • AC-7   [Automated QA & Log Dumping                      ]: ✅ PASS
+-------------------------------------------------------------------------------------
+🎉 TẤT CẢ 7 TIÊU CHÍ ĐỀU ĐẠT (STAGE 3 HOÀN THÀNH 100%)
+=====================================================================================
