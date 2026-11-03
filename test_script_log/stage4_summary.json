@@ -1,0 +1,52 @@
+{
+  "stage": 4,
+  "overall_passed": true,
+  "timestamp": "2026-11-03 20:16:17",
+  "criteria": {
+    "AC-1": {
+      "title": "Web UI Serving & Static Delivery",
+      "passed": true,
+      "status_code_root": 200,
+      "status_code_dashboard": 200,
+      "latency_ms": 5.17
+    },
+    "AC-2": {
+      "title": "Real-Time Telemetry Endpoint",
+      "passed": true,
+      "status_code": 200,
+      "latency_ms": 1.74,
+      "keys_present": [
+        "uptime_seconds",
+        "total_transactions",
+        "total_amount_usd",
+        "fraud_loss_prevented_usd",
+        "early_exit_count",
+        "early_exit_rate_pct",
+        "layer_counts",
+        "decision_counts",
+        "latency_benchmarks",
+        "recent_audit_stream"
+      ]
+    },
+    "AC-3": {
+      "title": "Dual-View UI Components",
+      "passed": true,
+      "missing_components": []
+    },
+    "AC-4": {
+      "title": "Interactive 2FA Challenge Workflow",
+      "passed": true,
+      "valid_otp_result": "AUTHORIZED",
+      "wrong_otp_result": "REJECTED",
+      "latency_ms": 3.5
+    },
+    "AC-5": {
+      "title": "Automated QA Simulation & Log Dumping",
+      "passed": true,
+      "total_transactions": 25,
+      "early_exit_rate_pct": 60.0,
+      "fraud_loss_prevented_usd": 6300.0,
+      "latency_p99_ms": 30.25
+    }
+  }
+}

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Shield | Dual-View Risk Control Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- TOP HEADER -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-wrap justify-between items-center shadow-lg">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-cyan-500/20 shadow-lg text-white text-xl">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+          Payment Shield Conformal Triage Engine
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-semibold font-mono-code">v1.0.0</span>
+        </h1>
+        <p class="text-xs text-slate-400">Kiến trúc phòng thủ 4 tầng Fast-Fail & Định chuẩn bất định Conformal (IEEE-CIS Fraud Dataset)</p>
+      </div>
+    </div>
+
+    <!-- System Status Pills -->
+    <div class="flex items-center gap-3 mt-3 sm:mt-0 font-mono-code text-xs">
+      <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="text-slate-300">API: <strong class="text-emerald-400" id="pill-api-status">ONLINE</strong></span>
+      </div>
+      <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300">
+        Mô hình: <strong class="text-cyan-400">LightGBM OOT (AUC 0.9108)</strong>
+      </div>
+      <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300">
+        Conformal: <strong class="text-purple-400">Mondrian (&alpha;=0.05)</strong>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER (DUAL-VIEW SPLIT) -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1920px] mx-auto w-full">
+    
+    <!-- LEFT PANEL: CUSTOMER CHECKOUT SIMULATOR (5 COLS) -->
+    <section class="lg:col-span-5 flex flex-col space-y-5">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+          <div class="flex items-center gap-2 text-cyan-400 font-bold">
+            <i class="fa-solid fa-credit-card"></i>
+            <span>CỔNG THANH TOÁN (CHECKOUT SIMULATOR)</span>
+          </div>
+          <span class="text-xs text-slate-400">Giao diện khách hàng</span>
+        </div>
+
+        <!-- Scenario Quick Pickers -->
+        <div class="mb-4">
+          <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider block mb-2">Chọn nhanh kịch bản kiểm thử:</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button onclick="loadScenario('safe')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 hover:border-emerald-500/50 p-2 rounded-xl text-left transition flex items-center gap-2">
+              <i class="fa-solid fa-circle-check"></i>
+              <div>
+                <p class="font-bold">1. Khách VIP An Toàn</p>
+                <p class="text-[10px] text-slate-400">$45.00 - Duyệt ngay</p>
+              </div>
+            </button>
+            <button onclick="loadScenario('uncertain')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 hover:border-amber-500/50 p-2 rounded-xl text-left transition flex items-center gap-2">
+              <i class="fa-solid fa-shield-virus"></i>
+              <div>
+                <p class="font-bold">2. Nghi Vấn (Conformal 2FA)</p>
+                <p class="text-[10px] text-slate-400">$1,250.00 - Cần OTP</p>
+              </div>
+            </button>
+            <button onclick="loadScenario('blacklisted_card')" class="bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/50 p-2 rounded-xl text-left transition flex items-center gap-2">
+              <i class="fa-solid fa-ban"></i>
+              <div>
+                <p class="font-bold">3. Thẻ Báo Mất / Khóa</p>
+                <p class="text-[10px] text-slate-400">L2 Blacklist Fast-Fail</p>
+              </div>
+            </button>
+            <button onclick="loadScenario('velocity')" class="bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-700 hover:border-orange-500/50 p-2 rounded-xl text-left transition flex items-center gap-2">
+              <i class="fa-solid fa-gauge-high"></i>
+              <div>
+                <p class="font-bold">4. Tấn Công Tần Suất</p>
+                <p class="text-[10px] text-slate-400">>2 lệnh/30s Velocity Block</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Checkout Form -->
+        <form id="checkout-form" class="space-y-3 flex-1" onsubmit="event.preventDefault(); submitPayment();">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Mã GD (Txn ID):</label>
+              <input id="input-txnid" type="number" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono-code" value="100001" required>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Số tiền ($ USD):</label>
+              <input id="input-amt" type="number" step="0.01" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono-code font-bold text-emerald-400" value="45.00" required>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">BIN (card1):</label>
+              <input id="input-card1" type="number" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono-code" value="13926" required>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Hãng (card4):</label>
+              <select id="input-card4" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+                <option value="discover">discover</option>
+                <option value="visa">visa</option>
+                <option value="mastercard">mastercard</option>
+                <option value="american express">american express</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Loại (card6):</label>
+              <select id="input-card6" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+                <option value="credit">credit</option>
+                <option value="debit">debit</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">IP Khách Hàng:</label>
+              <input id="input-ip" type="text" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono-code" value="192.168.1.100">
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Ngành hàng (ProductCD):</label>
+              <select id="input-product" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+                <option value="W">W (Web Goods)</option>
+                <option value="C">C (Credit/Crypto)</option>
+                <option value="R">R (Reload)</option>
+                <option value="H">H (High Risk)</option>
+                <option value="S">S (Service)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div class="pt-2 flex gap-2">
+            <button type="submit" id="btn-submit" class="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-cyan-600/20 transition flex items-center justify-center gap-2 text-xs">
+              <i class="fa-solid fa-lock"></i>
+              <span>QUẸT THẺ THANH TOÁN (TRIAGE)</span>
+            </button>
+            <button type="button" onclick="autoPlayDemo()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 px-3 rounded-xl border border-slate-700 transition flex items-center gap-2 text-xs">
+              <i class="fa-solid fa-play text-cyan-400"></i>
+              <span>Demo Tự Động</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Live Triage Response Card -->
+        <div id="response-container" class="mt-4 border border-slate-800 bg-slate-950/70 rounded-xl p-4 transition-all">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+            <span class="text-xs font-semibold text-slate-400 flex items-center gap-2">
+              <i class="fa-solid fa-microchip text-cyan-400"></i>
+              KẾT QUẢ ĐỊNH TUYẾN PHÒNG THỦ:
+            </span>
+            <span id="res-latency" class="text-xs font-mono-code px-2 py-0.5 rounded bg-slate-800 text-slate-300">-- ms</span>
+          </div>
+
+          <!-- Step Progression Indicator -->
+          <div class="grid grid-cols-4 gap-1 mb-3 text-center text-[10px] font-mono-code font-semibold">
+            <div id="step-l1" class="py-1 rounded bg-slate-900 border border-slate-800 text-slate-500">L1 Schema</div>
+            <div id="step-l2" class="py-1 rounded bg-slate-900 border border-slate-800 text-slate-500">L2 Rules</div>
+            <div id="step-l3" class="py-1 rounded bg-slate-900 border border-slate-800 text-slate-500">L3 Cache</div>
+            <div id="step-l4" class="py-1 rounded bg-slate-900 border border-slate-800 text-slate-500">L4 Conformal</div>
+          </div>
+
+          <!-- Decision Banner -->
+          <div id="decision-banner" class="rounded-xl p-3 bg-slate-900 border border-slate-800 text-center mb-3">
+            <p class="text-xs text-slate-400">Chờ lệnh thanh toán từ người dùng...</p>
+          </div>
+
+          <!-- Detailed metrics row -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800/80">
+              <span class="text-slate-400 block text-[10px]">Tập Nhãn Conformal:</span>
+              <strong id="res-conformal-set" class="font-mono-code text-cyan-300">--</strong>
+            </div>
+            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800/80">
+              <span class="text-slate-400 block text-[10px]">Xác suất Gian lận:</span>
+              <strong id="res-fraud-prob" class="font-mono-code text-slate-300">--</strong>
+            </div>
+          </div>
+          <p id="res-message" class="text-[11px] text-slate-400 mt-2 italic text-center">Hệ thống đang hoạt động ổn định và sẵn sàng.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: RISK CONTROL TOWER (7 COLS) -->
+    <section class="lg:col-span-7 flex flex-col space-y-5">
+      
+      <!-- KPI CARDS -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- KPI 1 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span>Tổng Giao Dịch</span>
+            <i class="fa-solid fa-database text-cyan-400"></i>
+          </div>
+          <div id="kpi-total-txns" class="text-2xl font-bold font-mono-code text-white">0</div>
+          <div class="text-[10px] text-slate-500 mt-1">Lũy kế phiên hiện tại</div>
+        </div>
+
+        <!-- KPI 2 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span>Tỷ Lệ Ngắt Sớm</span>
+            <i class="fa-solid fa-bolt text-amber-400"></i>
+          </div>
+          <div id="kpi-early-exit-rate" class="text-2xl font-bold font-mono-code text-amber-400">0.0%</div>
+          <div class="text-[10px] text-slate-500 mt-1">Fast-Fail (L1/L2/L3)</div>
+        </div>
+
+        <!-- KPI 3 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span>Tổn Thất Cứu Vãn</span>
+            <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i>
+          </div>
+          <div id="kpi-fraud-prevented" class="text-2xl font-bold font-mono-code text-emerald-400">$0.00</div>
+          <div class="text-[10px] text-slate-500 mt-1">Đã chặn gian lận</div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span>Độ Trễ p99 SLA</span>
+            <i class="fa-solid fa-stopwatch text-cyan-400"></i>
+          </div>
+          <div id="kpi-p99-latency" class="text-2xl font-bold font-mono-code text-cyan-400">-- ms</div>
+          <div class="text-[10px] text-slate-500 mt-1">Mục tiêu &lt; 40.0 ms</div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Chart 1: Triage Distribution -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col items-center">
+          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 self-start flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-cyan-400"></i>
+            Phân Bổ Quyết Định Triage (3-Way)
+          </h3>
+          <div class="w-full h-44 flex items-center justify-center">
+            <canvas id="chart-triage"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Layer Exit Distribution -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col">
+          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-purple-400"></i>
+            Phân Bổ Tầng Phòng Thủ Dừng Lại
+          </h3>
+          <div class="w-full h-44 flex items-center justify-center">
+            <canvas id="chart-layers"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE AUDIT STREAM TABLE -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex-1 flex flex-col">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+          <div class="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
+            <i class="fa-solid fa-tower-broadcast animate-pulse"></i>
+            <span>NHẬT KÝ KIỂM TOÁN GIAO DỊCH THỜI GIAN THỰC (AUDIT STREAM)</span>
+          </div>
+          <button onclick="refreshTelemetry()" class="text-xs text-slate-400 hover:text-cyan-400 transition flex items-center gap-1">
+            <i class="fa-solid fa-arrows-rotate"></i> Làm mới
+          </button>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar flex-1 max-h-56">
+          <table class="w-full text-left text-xs">
+            <thead class="text-[10px] text-slate-400 uppercase bg-slate-950/60 sticky top-0">
+              <tr>
+                <th class="py-2 px-3">Thời gian</th>
+                <th class="py-2 px-3">Mã GD</th>
+                <th class="py-2 px-3">Số tiền</th>
+                <th class="py-2 px-3">Tầng Dừng</th>
+                <th class="py-2 px-3">Quyết Định</th>
+                <th class="py-2 px-3">Độ trễ</th>
+                <th class="py-2 px-3">Lý do</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table-body" class="divide-y divide-slate-800/60 font-mono-code text-[11px]">
+              <tr>
+                <td colspan="7" class="py-6 text-center text-slate-500 italic">Chưa có giao dịch nào được ghi nhận. Hãy bấm "Quẹt thẻ" hoặc "Demo Tự Động".</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- 2FA STEP-UP MODAL OVERLAY -->
+  <div id="modal-2fa" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl shadow-cyan-500/10">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center gap-2 text-amber-400 font-bold text-sm">
+          <i class="fa-solid fa-shield-cat"></i>
+          <span>XÁC THỰC 2 BƯỚC (STEP-UP 2FA OTP)</span>
+        </div>
+        <button onclick="close2FAModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="bg-amber-950/40 border border-amber-800/50 rounded-xl p-3 text-xs text-amber-200 mb-4 flex items-start gap-2.5">
+        <i class="fa-solid fa-triangle-exclamation text-amber-400 mt-0.5"></i>
+        <div>
+          <p class="font-bold">Giao dịch rơi vào vùng bất định Conformal!</p>
+          <p class="text-[11px] text-amber-300/80">Hệ thống kích hoạt rào chắn OTP để bảo vệ tài khoản của bạn mà không từ chối nhầm.</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 mb-4 text-xs font-mono-code text-slate-300">
+        <div class="text-[10px] text-slate-500 uppercase mb-1">Tin nhắn SMS mô phỏng:</div>
+        <p class="text-cyan-400 font-bold">&laquo; [ACBPAY] Ma OTP xac thuc thanh toan GD #<span id="modal-txnid">--</span> la: <span class="text-amber-400 underline tracking-widest">123456</span>. Khong chia se ma nay cho bat ky ai &raquo;</p>
+      </div>
+
+      <form onsubmit="event.preventDefault(); submit2FA();" class="space-y-4">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Nhập mã OTP 6 số:</label>
+          <input id="input-otp" type="text" maxlength="6" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-center text-lg tracking-widest text-cyan-300 focus:outline-none focus:border-cyan-400 font-mono-code font-bold" placeholder="123456" required>
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2">
+            <i class="fa-solid fa-check"></i>
+            <span>XÁC NHẬN & PHÊ DUYỆT</span>
+          </button>
+          <button type="button" onclick="close2FAModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 px-4 rounded-xl text-xs">
+            Hủy bỏ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let triageChart = null;
+    let layersChart = null;
+    let currentPendingTxnId = null;
+
+    // SCENARIO PRESETS
+    const SCENARIOS = {
+      safe: {
+        amt: 45.00,
+        card1: 13926,
+        card4: "discover",
+        card6: "credit",
+        product: "W",
+        ip: "192.168.1.100"
+      },
+      uncertain: {
+        amt: 1250.00,
+        card1: 9500,
+        card4: "visa",
+        card6: "credit",
+        product: "H",
+        ip: "185.220.101.5"
+      },
+      blacklisted_card: {
+        amt: 800.00,
+        card1: 9999,
+        card4: "visa",
+        card6: "credit",
+        product: "W",
+        ip: "113.161.45.22"
+      },
+      velocity: {
+        amt: 100.00,
+        card1: 7777,
+        card4: "mastercard",
+        card6: "debit",
+        product: "W",
+        ip: "203.113.152.1"
+      }
+    };
+
+    function loadScenario(type) {
+      const sc = SCENARIOS[type];
+      if (!sc) return;
+      document.getElementById("input-txnid").value = Math.floor(100000 + Math.random() * 900000);
+      document.getElementById("input-amt").value = sc.amt.toFixed(2);
+      document.getElementById("input-card1").value = sc.card1;
+      document.getElementById("input-card4").value = sc.card4;
+      document.getElementById("input-card6").value = sc.card6;
+      document.getElementById("input-product").value = sc.product;
+      document.getElementById("input-ip").value = sc.ip;
+    }
+
+    // INIT CHARTS
+    function initCharts() {
+      const ctxTriage = document.getElementById('chart-triage').getContext('2d');
+      triageChart = new Chart(ctxTriage, {
+        type: 'doughnut',
+        data: {
+          labels: ['APPROVE (Duyệt)', 'STEP_UP_2FA (OTP)', 'BLOCK (Chặn)'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#94a3b8', font: { size: 10 } }
+            }
+          }
+        }
+      });
+
+      const ctxLayers = document.getElementById('chart-layers').getContext('2d');
+      layersChart = new Chart(ctxLayers, {
+        type: 'bar',
+        data: {
+          labels: ['L1 Schema', 'L2 Rules', 'L3 Cache', 'L4 Conformal'],
+          datasets: [{
+            label: 'Số giao dịch dừng lại',
+            data: [0, 0, 0, 0],
+            backgroundColor: ['#64748b', '#f97316', '#06b6d4', '#8b5cf6'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: '#1e293b' } },
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // SUBMIT PAYMENT
+    async function submitPayment() {
+      const btn = document.getElementById("btn-submit");
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích rủi ro...`;
+
+      // Reset step indicators
+      ['step-l1', 'step-l2', 'step-l3', 'step-l4'].forEach(id => {
+        document.getElementById(id).className = 'py-1 rounded bg-slate-900 border border-slate-800 text-slate-500';
+      });
+
+      const payload = {
+        transaction_id: parseInt(document.getElementById("input-txnid").value),
+        transaction_amt: parseFloat(document.getElementById("input-amt").value),
+        card1: parseInt(document.getElementById("input-card1").value),
+        card4: document.getElementById("input-card4").value,
+        card6: document.getElementById("input-card6").value,
+        product_cd: document.getElementById("input-product").value,
+        client_ip: document.getElementById("input-ip").value,
+        card2: 150.0,
+        card3: 150.0,
+        addr1: 315.0,
+        addr2: 87.0
+      };
+
+      try {
+        const res = await fetch("/api/v1/checkout/triage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        renderResult(res.status, data, payload);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-lock"></i> <span>QUẸT THẺ THANH TOÁN (TRIAGE)</span>`;
+        refreshTelemetry();
+      }
+    }
+
+    // RENDER RESPONSE
+    function renderResult(statusCode, data, payload) {
+      const banner = document.getElementById("decision-banner");
+      const latencyEl = document.getElementById("res-latency");
+      const setEl = document.getElementById("res-conformal-set");
+      const probEl = document.getElementById("res-fraud-prob");
+      const msgEl = document.getElementById("res-message");
+
+      latencyEl.textContent = `${data.latency_ms || 1.5} ms`;
+
+      if (statusCode === 422) {
+        // Layer 1
+        highlightStep('step-l1', 'border-rose-500 text-rose-400 bg-rose-950/40');
+        banner.className = 'rounded-xl p-3 bg-rose-950/50 border border-rose-800 text-center mb-3 text-rose-300';
+        banner.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400 text-lg mb-1"></i><p class="font-bold">LAYER 1: LỖI CÚ PHÁP (FAST-FAIL)</p><p class="text-xs">${data.message || 'Dữ liệu không hợp lệ'}</p>`;
+        setEl.textContent = 'N/A';
+        probEl.textContent = 'N/A';
+        msgEl.textContent = 'Giao dịch bị từ chối ngay tại tầng Schema Pydantic.';
+      } else if (statusCode === 403) {
+        // Layer 2
+        highlightStep('step-l2', 'border-rose-500 text-rose-400 bg-rose-950/40');
+        banner.className = 'rounded-xl p-3 bg-rose-950/50 border border-rose-800 text-center mb-3 text-rose-300';
+        banner.innerHTML = `<i class="fa-solid fa-ban text-rose-400 text-lg mb-1"></i><p class="font-bold">LAYER 2: QUY TẮC AN NINH CHẶN ĐỨNG (FAST-FAIL)</p><p class="text-xs">${data.message || 'Vi phạm blacklist hoặc velocity'}</p>`;
+        setEl.textContent = 'N/A';
+        probEl.textContent = 'N/A';
+        msgEl.textContent = 'Giao dịch bị chặn bởi Rule Engine trong < 3ms.';
+      } else {
+        // Success triage response
+        if (data.layer_reached === "LAYER_3_CACHE") {
+          highlightStep('step-l3', 'border-cyan-500 text-cyan-400 bg-cyan-950/40');
+        } else {
+          highlightStep('step-l4', 'border-purple-500 text-purple-400 bg-purple-950/40');
+        }
+
+        setEl.textContent = (data.conformal_set && data.conformal_set.length > 0) ? `{ ${data.conformal_set.join(', ')} }` : '{ Legit }';
+        probEl.textContent = `${(data.fraud_probability * 100).toFixed(2)}%`;
+        msgEl.textContent = data.message;
+
+        if (data.decision === "APPROVE") {
+          banner.className = 'rounded-xl p-3 bg-emerald-950/50 border border-emerald-800 text-center mb-3 text-emerald-300';
+          banner.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-lg mb-1"></i><p class="font-bold text-sm tracking-wide">PHÊ DUYỆT TỰ ĐỘNG (APPROVE)</p><p class="text-xs text-emerald-400/80">Thanh toán hoàn tất tức thì. Rủi ro gian lận ở mức cực thấp.</p>`;
+        } else if (data.decision === "STEP_UP_2FA") {
+          banner.className = 'rounded-xl p-3 bg-amber-950/50 border border-amber-800 text-center mb-3 text-amber-300';
+          banner.innerHTML = `<i class="fa-solid fa-shield-virus text-amber-400 text-lg mb-1"></i><p class="font-bold text-sm tracking-wide">YÊU CẦU XÁC THỰC 2 BƯỚC (STEP-UP 2FA)</p><p class="text-xs text-amber-400/80">Giao dịch thuộc vùng bất định Conformal. Cần nhập mã OTP SMS.</p>`;
+          // Open 2FA modal automatically
+          currentPendingTxnId = data.transaction_id;
+          open2FAModal(data.transaction_id);
+        } else {
+          banner.className = 'rounded-xl p-3 bg-rose-950/50 border border-rose-800 text-center mb-3 text-rose-300';
+          banner.innerHTML = `<i class="fa-solid fa-hand text-rose-400 text-lg mb-1"></i><p class="font-bold text-sm tracking-wide">TỪ CHỐI THANH TOÁN (BLOCK)</p><p class="text-xs text-rose-400/80">Phát hiện hành vi gian lận rõ rệt với độ tin cậy toán học cao.</p>`;
+        }
+      }
+    }
+
+    function highlightStep(stepId, classes) {
+      document.getElementById(stepId).className = `py-1 rounded font-bold ${classes}`;
+    }
+
+    // 2FA MODAL WORKFLOW
+    function open2FAModal(txnId) {
+      document.getElementById("modal-txnid").textContent = txnId;
+      document.getElementById("modal-2fa").classList.remove("hidden");
+      document.getElementById("input-otp").value = "123456";
+    }
+
+    function close2FAModal() {
+      document.getElementById("modal-2fa").classList.add("hidden");
+    }
+
+    async function submit2FA() {
+      const otp = document.getElementById("input-otp").value;
+      try {
+        const res = await fetch("/api/v1/checkout/verify-2fa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transaction_id: currentPendingTxnId,
+            otp_code: otp
+          })
+        });
+        const data = await res.json();
+        close2FAModal();
+        alert(data.message);
+        refreshTelemetry();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // TELEMETRY REFRESH
+    async function refreshTelemetry() {
+      try {
+        const res = await fetch("/api/v1/telemetry/stats");
+        const stats = await res.json();
+
+        // Update KPI
+        document.getElementById("kpi-total-txns").textContent = stats.total_transactions;
+        document.getElementById("kpi-early-exit-rate").textContent = `${stats.early_exit_rate_pct}%`;
+        document.getElementById("kpi-fraud-prevented").textContent = `$${stats.fraud_loss_prevented_usd.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        document.getElementById("kpi-p99-latency").textContent = `${stats.latency_benchmarks.p99_ms} ms`;
+
+        // Update Charts
+        if (triageChart) {
+          triageChart.data.datasets[0].data = [
+            stats.decision_counts.APPROVE || 0,
+            stats.decision_counts.STEP_UP_2FA || 0,
+            (stats.decision_counts.BLOCK || 0) + (stats.decision_counts.FAST_FAIL_ERROR || 0)
+          ];
+          triageChart.update();
+        }
+
+        if (layersChart) {
+          layersChart.data.datasets[0].data = [
+            stats.layer_counts.LAYER_1_SCHEMA || 0,
+            stats.layer_counts.LAYER_2_RULE || 0,
+            stats.layer_counts.LAYER_3_CACHE || 0,
+            stats.layer_counts.LAYER_4_CONFORMAL_ML || 0
+          ];
+          layersChart.update();
+        }
+
+        // Update Audit Table
+        const tbody = document.getElementById("audit-table-body");
+        if (stats.recent_audit_stream && stats.recent_audit_stream.length > 0) {
+          tbody.innerHTML = stats.recent_audit_stream.map(item => {
+            let badgeClass = "text-emerald-400 bg-emerald-950/60 border border-emerald-800";
+            if (item.decision === "STEP_UP_2FA") badgeClass = "text-amber-400 bg-amber-950/60 border border-amber-800";
+            if (item.decision === "BLOCK" || item.decision === "FAST_FAIL_ERROR") badgeClass = "text-rose-400 bg-rose-950/60 border border-rose-800";
+
+            return `
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="py-2 px-3 text-slate-400">${item.timestamp}</td>
+                <td class="py-2 px-3 font-bold text-slate-300">#${item.id}</td>
+                <td class="py-2 px-3 text-emerald-400 font-bold">$${item.amount.toFixed(2)}</td>
+                <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">${item.layer}</span></td>
+                <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${item.decision}</span></td>
+                <td class="py-2 px-3 text-cyan-300">${item.latency_ms} ms</td>
+                <td class="py-2 px-3 text-slate-400 text-[10px] truncate max-w-xs">${item.reason}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // AUTO-PLAY DEMO
+    async function autoPlayDemo() {
+      const keys = ['safe', 'uncertain', 'blacklisted_card', 'velocity'];
+      for (const k of keys) {
+        loadScenario(k);
+        await submitPayment();
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+
+    // BOOTSTRAP
+    window.addEventListener("DOMContentLoaded", () => {
+      initCharts();
+      refreshTelemetry();
+      setInterval(refreshTelemetry, 5000);
+    });
+  </script>
+</body>
+</html>

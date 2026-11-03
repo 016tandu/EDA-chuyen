@@ -18,7 +18,9 @@ from src.domain.conformal import ConformalPredictionSet
 from src.usecase.conformal_engine import ConformalEngine
 from src.adapter.cache.idempotency_cache import IdempotencyCache
 from src.adapter.rules.rule_engine import RuleEngine
+from src.adapter.telemetry.telemetry_service import TelemetryCollector
 from src.entrypoint.api.schemas import CheckoutRequest, TriageResponse
+
 
 
 class BlockingRuleError(Exception):
@@ -39,7 +41,8 @@ class PaymentTriageService:
         categorical_features: Optional[List[str]] = None,
         rule_engine: Optional[RuleEngine] = None,
         cache: Optional[IdempotencyCache] = None,
-        cost_matrix: Optional[CostMatrix] = None
+        cost_matrix: Optional[CostMatrix] = None,
+        telemetry: Optional[TelemetryCollector] = None
     ):
         self.model = model
         self.conformal_engine = conformal_engine
@@ -48,6 +51,8 @@ class PaymentTriageService:
         self.rule_engine = rule_engine or RuleEngine()
         self.cache = cache or IdempotencyCache(ttl_seconds=300)
         self.cost_matrix = cost_matrix or CostMatrix()
+        self.telemetry = telemetry or TelemetryCollector()
+
 
         # Tạo sẵn template dữ liệu chuẩn để tối ưu hóa tốc độ tạo row (< 2ms)
         self._template: Dict[str, Any] = {}
@@ -125,6 +130,17 @@ class PaymentTriageService:
         cached_res = self.cache.get(hash_key)
         if cached_res:
             elapsed_ms = (time.perf_counter() - t_start) * 1000.0
+            if self.telemetry:
+                self.telemetry.record_transaction(
+                    transaction_id=str(req.transaction_id),
+                    amount=req.transaction_amt,
+                    layer="LAYER_3_CACHE",
+                    decision=cached_res["decision"],
+                    latency_ms=elapsed_ms,
+                    fraud_prob=cached_res.get("fraud_probability"),
+                    conformal_set=cached_res.get("conformal_set"),
+                    reason="Idempotency Cache Replay"
+                )
             return TriageResponse(
                 transaction_id=req.transaction_id,
                 decision=cached_res["decision"],
@@ -137,6 +153,7 @@ class PaymentTriageService:
                 message="[IDEMPOTENCY] Kết quả giao dịch đã được xử lý trước đó, tái sử dụng tức thì.",
                 reason_codes=["IDEMPOTENT_REPLAY_SUCCESS"]
             )
+
 
         # -------------------------------------------------------------
         # LAYER 4: CONFORMAL AI INFERENCE (Độ trễ p99 < 30ms)
@@ -186,4 +203,17 @@ class PaymentTriageService:
         # Lưu đệm Layer 3 cho các yêu cầu lặp lại
         self.cache.set(hash_key, response_data)
 
+        if self.telemetry:
+            self.telemetry.record_transaction(
+                transaction_id=str(req.transaction_id),
+                amount=req.transaction_amt,
+                layer="LAYER_4_CONFORMAL_ML",
+                decision=decision_enum.value,
+                latency_ms=elapsed_ms,
+                fraud_prob=fraud_prob,
+                conformal_set=triage_set.formatted_labels,
+                reason=msg
+            )
+
         return TriageResponse(**response_data)
+

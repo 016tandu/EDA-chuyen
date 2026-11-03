@@ -61,3 +61,30 @@ class HealthResponse(BaseModel):
     conformal_calibrated: bool
     cache_entries: int
     uptime_seconds: float
+
+
+class Verify2FARequest(BaseModel):
+    transaction_id: int = Field(..., description="Mã giao dịch cần xác thực OTP")
+    otp_code: str = Field(..., min_length=4, max_length=10, description="Mã OTP do người dùng nhập")
+
+
+class Verify2FAResponse(BaseModel):
+    transaction_id: int
+    verified: bool
+    final_status: str  # "AUTHORIZED", "REJECTED"
+    message: str
+    latency_ms: float
+
+
+class TelemetryStatsResponse(BaseModel):
+    uptime_seconds: float
+    total_transactions: int
+    total_amount_usd: float
+    fraud_loss_prevented_usd: float
+    early_exit_count: int
+    early_exit_rate_pct: float
+    layer_counts: Dict[str, int]
+    decision_counts: Dict[str, int]
+    latency_benchmarks: Dict[str, float]
+    recent_audit_stream: List[Dict[str, Any]]
+
