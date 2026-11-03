@@ -1,0 +1,50 @@
+{
+  "calibration": {
+    "q_hat_legit": 0.0545,
+    "q_hat_fraud": 0.9926,
+    "threshold_approve": 0.005,
+    "threshold_block": 0.9,
+    "nominal_coverage_legit": 0.95,
+    "nominal_coverage_fraud": 0.95,
+    "empirical_coverage_legit": 0.9427,
+    "empirical_coverage_fraud": 0.9394
+  },
+  "triage_summary": {
+    "total_transactions": 94636,
+    "auto_approved": 41846,
+    "auto_approved_pct": 44.22,
+    "step_up_2fa": 52169,
+    "step_up_2fa_pct": 55.13,
+    "blocked": 621,
+    "blocked_pct": 0.66
+  },
+  "fraud_breakdown": {
+    "total_fraud": 3282,
+    "fraud_blocked_direct": 573,
+    "fraud_intercepted_2fa": 2582,
+    "fraud_missed_escaped": 127,
+    "fraud_detection_rate_pct": 96.13,
+    "fraud_escaped_rate_pct": 3.87
+  },
+  "legit_breakdown": {
+    "total_legit": 91354,
+    "legit_frictionless_approved": 41719,
+    "legit_frictionless_pct": 45.67,
+    "legit_stepped_2fa": 49587,
+    "legit_stepped_pct": 54.28,
+    "legit_false_blocked": 48,
+    "legit_false_blocked_pct": 0.05
+  },
+  "financial_impact": {
+    "total_financial_loss_usd": 21456.57
+  },
+  "comparison_vs_baseline": {
+    "baseline_loss_usd": 392641.78,
+    "conformal_loss_usd": 21456.57,
+    "loss_reduction_usd": 371185.21,
+    "loss_reduction_pct": 94.54,
+    "baseline_missed_fraud": 2184,
+    "conformal_missed_fraud": 127,
+    "missed_fraud_reduction_pct": 94.18
+  }
+}

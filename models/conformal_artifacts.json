@@ -1,0 +1,21 @@
+{
+  "q_hat_0": 0.05451282717588382,
+  "q_hat_1": 0.992580767571713,
+  "optimal_cost_thresholds": {
+    "t_approve": 0.005,
+    "t_block": 0.9,
+    "calib_min_cost": 19334.379
+  },
+  "config": {
+    "alpha_legit": 0.05,
+    "alpha_fraud": 0.05,
+    "method": "mondrian"
+  },
+  "metadata": {
+    "n_calib_total": 85303,
+    "n_calib_legit": 82341,
+    "n_calib_fraud": 2962,
+    "q_level_0": 0.9500127518490181,
+    "q_level_1": 0.9503713706954761
+  }
+}
